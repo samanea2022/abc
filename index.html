@@ -282,7 +282,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>智能随机问答</h1>
+            <h1>随机抽题</h1>
         </header>
 
         <div class="main-content">
@@ -349,7 +349,7 @@
         </div>
 
         <footer>
-            <p>&copy; 2023 | 使用 Supabase 数据库</p>
+            <p> &copy; 2023 | 使用 Supabase 数据库</p>
         </footer>
     </div>
 
@@ -424,9 +424,9 @@
             statusMessage.className = `status-message ${type}`;
             statusMessage.classList.remove('hidden');
 
-            setTimeout(() => {
-                statusMessage.classList.add('hidden');
-            }, 4000);
+            // setTimeout(() => {
+            //     statusMessage.classList.add('hidden');
+            // }, 4000);
         }
 
         // 获取随机问题
@@ -511,36 +511,46 @@
             editFormContainer.classList.add('hidden');
         }
 
-        // 保存编辑
+        // 在代码顶部配置区域，设置你的管理密码
+        const MANAGEMENT_PASSWORD = '314592';
+
+        // 通用的密码验证函数
+        function verifyPassword(action) {
+            const password = prompt(`请输入管理密码以${action}:`);
+            return password === MANAGEMENT_PASSWORD;
+        }
+
+
+        // 修改后的保存函数
         async function saveEdit() {
-            if (!supabaseClient) {
-                showStatus("数据库连接未初始化", "error");
+            if (!verifyPassword('修改答案')) {
+                showStatus('密码错误，操作已取消', 'error');
                 return;
             }
 
             const newAnswer = document.getElementById('edit-answer').value.trim();
-
             if (!newAnswer) {
                 showStatus("答案不能为空", "error");
                 return;
             }
 
             try {
+                showStatus('正在提交修改...', 'info');
                 const { data, error } = await supabaseClient
-                    .from(SUPABASE_CONFIG.tableName)
+                    .from('qa_table')
                     .update({ answer: newAnswer })
                     .eq('id', currentQuestionId);
 
                 if (error) throw error;
 
+                // 更新成功
                 currentAnswer = newAnswer;
                 answerText.textContent = newAnswer;
-
                 hideEditForm();
-                showStatus("答案已成功更新", "success");
+                showStatus('答案修改成功！', 'success');
             } catch (error) {
-                console.error("更新答案时出错:", error);
-                showStatus(`更新失败: ${error.message}`, "error");
+                console.error('修改失败:', error);
+                showStatus(`修改失败: ${error.message}`, 'error');
             }
         }
 
@@ -558,43 +568,39 @@
             addFormContainer.classList.add('hidden');
         }
 
-        // 保存新问答
+        // 修改后的新增函数
         async function saveNewQa() {
-            if (!supabaseClient) {
-                showStatus("数据库连接未初始化", "error");
+            if (!verifyPassword('新增问答')) {
+                showStatus('密码错误，操作已取消', 'error');
                 return;
             }
 
             const newQuestion = document.getElementById('new-question').value.trim();
             const newAnswer = document.getElementById('new-answer').value.trim();
-
             if (!newQuestion || !newAnswer) {
                 showStatus("问题和答案都不能为空", "error");
                 return;
             }
 
             try {
+                showStatus('正在提交新增...', 'info');
                 const { data, error } = await supabaseClient
-                    .from(SUPABASE_CONFIG.tableName)
-                    .insert([
-                        { question: newQuestion, answer: newAnswer }
-                    ]);
+                    .from('qa_table')
+                    .insert([{ question: newQuestion, answer: newAnswer }]);
 
                 if (error) throw error;
 
+                // 新增成功
                 hideAddForm();
-                showStatus("新问答已成功添加到数据库", "success");
+                document.getElementById('new-question').value = '';
+                document.getElementById('new-answer').value = '';
+                showStatus('新问答添加成功！', 'success');
 
-                // 清空当前显示的内容
-                currentQuestionId = null;
-                currentQuestion = null;
-                currentAnswer = null;
-                questionText.textContent = "点击'随机问题'按钮开始";
-                answerText.textContent = "点击'显示答案'按钮查看答案";
-                answerText.style.color = "#666";
+                // 可选：1秒后自动刷新一个问题，可能会刷到新增的
+                setTimeout(() => getRandomQuestion(), 1000);
             } catch (error) {
-                console.error("添加新问答时出错:", error);
-                showStatus(`添加失败: ${error.message}`, "error");
+                console.error('新增失败:', error);
+                showStatus(`新增失败: ${error.message}`, 'error');
             }
         }
 
