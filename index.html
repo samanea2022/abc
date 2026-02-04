@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能问答管理系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: rgba(255, 255, 255, 0.97);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(to right, #3a7bd5, #00d2ff);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+        }
+
+        .qa-display {
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            padding: 22px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            min-height: 250px;
+        }
+
+        .qa-display h2 {
+            color: #3a7bd5;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eaeaea;
+            font-size: 1.4rem;
+        }
+
+        .question-box, .answer-box {
+            margin-bottom: 18px;
+        }
+
+        .question-box label, .answer-box label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .question-text, .answer-text {
+            background-color: white;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-size: 1.05rem;
+            line-height: 1.5;
+            min-height: 55px;
+        }
+
+        .answer-text {
+            background-color: #f0f8ff;
+        }
+
+        .buttons-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .btn i {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+
+        .btn-random {
+            background-color: #ff9a00;
+            color: white;
+        }
+
+        .btn-show {
+            background-color: #00c851;
+            color: white;
+        }
+
+        .btn-edit {
+            background-color: #33b5e5;
+            color: white;
+        }
+
+        .btn-add {
+            background-color: #aa66cc;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 14px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .form-container {
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            padding: 22px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-top: 10px;
+        }
+
+        .form-container h3 {
+            color: #3a7bd5;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eaeaea;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-submit {
+            background-color: #00c851;
+            color: white;
+            padding: 12px 22px;
+            flex: 1;
+        }
+
+        .btn-cancel {
+            background-color: #ff4444;
+            color: white;
+            padding: 12px 22px;
+            flex: 1;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        footer {
+            text-align: center;
+            padding: 18px;
+            color: #777;
+            font-size: 0.85rem;
+            border-top: 1px solid #eee;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 15px;
+            }
+
+            .buttons-container {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 18px;
+            }
+
+            .qa-display, .form-container {
+                padding: 18px;
+            }
+
+            .btn {
+                padding: 12px 16px;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>智能随机问答</h1>
+        </header>
+
+        <div class="main-content">
+            <div class="qa-display">
+                <h2>问答内容</h2>
+                <div class="question-box">
+                    <label>问题：</label>
+                    <div id="question-text" class="question-text">点击"随机问题"按钮开始</div>
+                </div>
+                <div class="answer-box">
+                    <label>答案：</label>
+                    <div id="answer-text" class="answer-text">点击"显示答案"按钮查看答案</div>
+                </div>
+            </div>
+
+            <div class="buttons-container">
+                <button id="random-btn" class="btn btn-random">
+                    <i class="fas fa-random"></i> 随机问题
+                </button>
+                <button id="show-answer-btn" class="btn btn-show">
+                    <i class="fas fa-eye"></i> 显示答案
+                </button>
+                <button id="edit-answer-btn" class="btn btn-edit">
+                    <i class="fas fa-edit"></i> 修改答案
+                </button>
+                <button id="add-qa-btn" class="btn btn-add">
+                    <i class="fas fa-plus-circle"></i> 增加问答
+                </button>
+            </div>
+
+            <div id="status-message" class="status-message hidden"></div>
+
+            <div id="edit-form-container" class="form-container hidden">
+                <h3>修改答案</h3>
+                <div class="form-group">
+                    <label for="edit-question">问题：</label>
+                    <textarea id="edit-question" readonly></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-answer">答案：</label>
+                    <textarea id="edit-answer" placeholder="请输入修改后的答案..."></textarea>
+                </div>
+                <div class="form-buttons">
+                    <button id="save-edit-btn" class="btn btn-submit">保存修改</button>
+                    <button id="cancel-edit-btn" class="btn btn-cancel">取消</button>
+                </div>
+            </div>
+
+            <div id="add-form-container" class="form-container hidden">
+                <h3>添加新问答</h3>
+                <div class="form-group">
+                    <label for="new-question">问题：</label>
+                    <textarea id="new-question" placeholder="请输入新问题..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="new-answer">答案：</label>
+                    <textarea id="new-answer" placeholder="请输入答案..."></textarea>
+                </div>
+                <div class="form-buttons">
+                    <button id="save-add-btn" class="btn btn-submit">添加问答</button>
+                    <button id="cancel-add-btn" class="btn btn-cancel">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2023 | 使用 Supabase 数据库</p>
+        </footer>
+    </div>
+
+    <script>
+        // Supabase配置 - 请替换为您的实际配置
+        const SUPABASE_CONFIG = {
+            url: 'https://bnsbjgyulputgmqixjzs.supabase.co',  // 请替换为您的Supabase URL
+            key: 'sb_publishable_AMpdOLRMYhtY32EbVrhEUg_d58mXmte',    // 请替换为您的Supabase API密钥
+            tableName: 'qa_table'                     // 数据库表名
+        };
+
+        // 全局变量
+        let supabaseClient = null;
+        let currentQuestionId = null;
+        let currentQuestion = null;
+        let currentAnswer = null;
+
+        // DOM元素
+        const questionText = document.getElementById('question-text');
+        const answerText = document.getElementById('answer-text');
+        const randomBtn = document.getElementById('random-btn');
+        const showAnswerBtn = document.getElementById('show-answer-btn');
+        const editAnswerBtn = document.getElementById('edit-answer-btn');
+        const addQaBtn = document.getElementById('add-qa-btn');
+        const statusMessage = document.getElementById('status-message');
+        const editFormContainer = document.getElementById('edit-form-container');
+        const addFormContainer = document.getElementById('add-form-container');
+
+        // 初始化Supabase客户端
+        function initializeSupabase() {
+            try {
+                supabaseClient = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+                console.log("Supabase客户端初始化成功");
+
+                // 测试连接
+                testSupabaseConnection();
+            } catch (error) {
+                console.error("Supabase初始化失败:", error);
+                showStatus("Supabase连接初始化失败，请检查配置", "error");
+            }
+        }
+
+        // 测试Supabase连接
+        async function testSupabaseConnection() {
+            if (!supabaseClient) return;
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from(SUPABASE_CONFIG.tableName)
+                    .select('count')
+                    .limit(1);
+
+                if (error) {
+                    // 可能是表不存在，尝试创建表
+                    if (error.message.includes("does not exist")) {
+                        showStatus("数据库表不存在，请确保表名正确", "error");
+                    } else {
+                        throw error;
+                    }
+                } else {
+                    console.log("Supabase连接测试成功");
+                }
+            } catch (error) {
+                console.error("Supabase连接测试失败:", error);
+                showStatus(`数据库连接失败: ${error.message}`, "error");
+            }
+        }
+
+        // 显示状态消息
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            statusMessage.classList.remove('hidden');
+
+            setTimeout(() => {
+                statusMessage.classList.add('hidden');
+            }, 4000);
+        }
+
+        // 获取随机问题
+        async function getRandomQuestion() {
+            if (!supabaseClient) {
+                showStatus("数据库连接未初始化", "error");
+                return;
+            }
+
+            try {
+                // 首先获取总记录数
+                const { count, error: countError } = await supabaseClient
+                    .from(SUPABASE_CONFIG.tableName)
+                    .select('*', { count: 'exact', head: true });
+
+                if (countError) throw countError;
+
+                if (count === 0) {
+                    showStatus("数据库中暂无问答数据，请先添加问题", "info");
+                    return;
+                }
+
+                // 生成随机偏移量
+                const randomOffset = Math.floor(Math.random() * count);
+
+                // 获取随机记录
+                const { data, error } = await supabaseClient
+                    .from(SUPABASE_CONFIG.tableName)
+                    .select('*')
+                    .range(randomOffset, randomOffset)
+                    .limit(1);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    currentQuestionId = data[0].id;
+                    currentQuestion = data[0].question;
+                    currentAnswer = data[0].answer;
+
+                    questionText.textContent = currentQuestion;
+                    answerText.textContent = "点击'显示答案'按钮查看答案";
+                    answerText.style.color = "#666";
+
+                    showStatus(`已获取随机问题`, "success");
+                } else {
+                    showStatus("未找到问题，请确保数据库中有数据", "error");
+                }
+            } catch (error) {
+                console.error("获取随机问题时出错:", error);
+                showStatus(`获取问题失败: ${error.message}`, "error");
+            }
+        }
+
+        // 显示答案
+        function showAnswer() {
+            if (!currentAnswer) {
+                showStatus("请先获取一个问题", "error");
+                return;
+            }
+
+            answerText.textContent = currentAnswer;
+            answerText.style.color = "#333";
+            showStatus("答案已显示", "info");
+        }
+
+        // 显示编辑表单
+        function showEditForm() {
+            if (!currentQuestion || !currentAnswer) {
+                showStatus("请先获取一个问题", "error");
+                return;
+            }
+
+            document.getElementById('edit-question').value = currentQuestion;
+            document.getElementById('edit-answer').value = currentAnswer;
+
+            editFormContainer.classList.remove('hidden');
+            addFormContainer.classList.add('hidden');
+        }
+
+        // 隐藏编辑表单
+        function hideEditForm() {
+            editFormContainer.classList.add('hidden');
+        }
+
+        // 保存编辑
+        async function saveEdit() {
+            if (!supabaseClient) {
+                showStatus("数据库连接未初始化", "error");
+                return;
+            }
+
+            const newAnswer = document.getElementById('edit-answer').value.trim();
+
+            if (!newAnswer) {
+                showStatus("答案不能为空", "error");
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from(SUPABASE_CONFIG.tableName)
+                    .update({ answer: newAnswer })
+                    .eq('id', currentQuestionId);
+
+                if (error) throw error;
+
+                currentAnswer = newAnswer;
+                answerText.textContent = newAnswer;
+
+                hideEditForm();
+                showStatus("答案已成功更新", "success");
+            } catch (error) {
+                console.error("更新答案时出错:", error);
+                showStatus(`更新失败: ${error.message}`, "error");
+            }
+        }
+
+        // 显示添加表单
+        function showAddForm() {
+            document.getElementById('new-question').value = "";
+            document.getElementById('new-answer').value = "";
+
+            addFormContainer.classList.remove('hidden');
+            editFormContainer.classList.add('hidden');
+        }
+
+        // 隐藏添加表单
+        function hideAddForm() {
+            addFormContainer.classList.add('hidden');
+        }
+
+        // 保存新问答
+        async function saveNewQa() {
+            if (!supabaseClient) {
+                showStatus("数据库连接未初始化", "error");
+                return;
+            }
+
+            const newQuestion = document.getElementById('new-question').value.trim();
+            const newAnswer = document.getElementById('new-answer').value.trim();
+
+            if (!newQuestion || !newAnswer) {
+                showStatus("问题和答案都不能为空", "error");
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from(SUPABASE_CONFIG.tableName)
+                    .insert([
+                        { question: newQuestion, answer: newAnswer }
+                    ]);
+
+                if (error) throw error;
+
+                hideAddForm();
+                showStatus("新问答已成功添加到数据库", "success");
+
+                // 清空当前显示的内容
+                currentQuestionId = null;
+                currentQuestion = null;
+                currentAnswer = null;
+                questionText.textContent = "点击'随机问题'按钮开始";
+                answerText.textContent = "点击'显示答案'按钮查看答案";
+                answerText.style.color = "#666";
+            } catch (error) {
+                console.error("添加新问答时出错:", error);
+                showStatus(`添加失败: ${error.message}`, "error");
+            }
+        }
+
+        // 初始化事件监听器
+        function initEventListeners() {
+            // 按钮事件
+            randomBtn.addEventListener('click', getRandomQuestion);
+            showAnswerBtn.addEventListener('click', showAnswer);
+            editAnswerBtn.addEventListener('click', showEditForm);
+            addQaBtn.addEventListener('click', showAddForm);
+
+            // 编辑表单事件
+            document.getElementById('save-edit-btn').addEventListener('click', saveEdit);
+            document.getElementById('cancel-edit-btn').addEventListener('click', hideEditForm);
+
+            // 添加表单事件
+            document.getElementById('save-add-btn').addEventListener('click', saveNewQa);
+            document.getElementById('cancel-add-btn').addEventListener('click', hideAddForm);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化Supabase连接
+            initializeSupabase();
+
+            // 初始化事件监听器
+            initEventListeners();
+
+            // 显示欢迎信息
+            setTimeout(() => {
+                showStatus("欢迎使用智能问答管理系统！点击'随机问题'按钮开始。", "info");
+            }, 800);
+        });
+    </script>
+</body>
+</html>
