@@ -85,7 +85,17 @@
             font-size: 1rem;
         }
 
-        .question-text, .answer-text {
+        .question-text{
+            background-color: white;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-size: 1.5rem;
+            line-height: 1.5;
+            min-height: 55px;
+        }
+
+        .answer-text {
             background-color: white;
             padding: 16px;
             border-radius: 10px;
@@ -631,7 +641,7 @@
 
             // 显示欢迎信息
             setTimeout(() => {
-                showStatus("欢迎使用智能问答管理系统！点击'随机问题'按钮开始。", "info");
+                showStatus("点击'随机问题'按钮开始。", "info");
             }, 800);
         });
     </script>
