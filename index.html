@@ -197,9 +197,28 @@
             border: 1px solid #ddd;
             border-radius: 10px;
             font-size: 1rem;
-            resize: vertical;
+            resize: none;
             min-height: 100px;
             font-family: inherit;
+        }
+
+        #edit-answer {
+            /* 核心：隐藏滚动条，允许高度自由扩展 */
+            overflow-y: hidden !important;
+            /* 基础：设置一个合理的起始最小高度 */
+            min-height: 120px;
+            /* 重要：确保高度计算包含内边距和边框 */
+            box-sizing: border-box;
+            /* 可选：让高度变化更平滑 */
+            transition: height 0.1s ease-out;
+
+            /* 你原有的其他样式（宽度、边框、字体等）保持不动 */
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            line-height: 1.5;
         }
 
         .form-buttons {
@@ -503,6 +522,39 @@
             showStatus("答案已显示", "info");
         }
 
+        // 1. 定义核心的自动增高函数
+        function autoGrow(textarea) {
+            // 重置高度，强制浏览器重新计算
+            textarea.style.height = 'auto';
+            // 将高度设置为内容的完整高度
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        // 2. 设置自动增高的主函数（在打开编辑框时调用）
+        function setupEditAnswerAutoResize() {
+            const answerTextarea = document.getElementById('edit-answer');
+
+            if (!answerTextarea) {
+                console.warn('未找到 #edit-answer 文本框');
+                return;
+            }
+
+            // 先解除可能旧的事件监听，再绑定新的，防止重复
+            const handleInput = function() {
+                autoGrow(this);
+            };
+            answerTextarea.removeEventListener('input', handleInput);
+            answerTextarea.addEventListener('input', handleInput);
+
+            // 关键一步：初始化当前内容的高度
+            // 使用setTimeout确保在浏览器完成渲染后执行
+            setTimeout(() => {
+                autoGrow(answerTextarea);
+            }, 0);
+
+            console.log('✅ 自动增高已绑定到 #edit-answer');
+        }
+
         // 显示编辑表单
         function showEditForm() {
             if (!currentQuestion || !currentAnswer) {
@@ -514,6 +566,8 @@
             document.getElementById('edit-answer').value = currentAnswer;
 
             editFormContainer.classList.remove('hidden');
+            // ！！！在此处调用自动增高函数 ！！！
+            setupEditAnswerAutoResize();
             addFormContainer.classList.add('hidden');
         }
 
